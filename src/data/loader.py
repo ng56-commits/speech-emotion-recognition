@@ -91,18 +91,3 @@ def load_all_datasets(ravdess_path, tess_path):
 
 
 
-#FOR TESTING PURPOSES
-if __name__ == "__main__":
-
-    ravdess_path = "../../data/raw/ravdess"
-    tess_path = "../../data/raw/tess"
-
-    audio, labels, sample_rates = load_all_datasets(
-        ravdess_path,
-        tess_path,
-    )
-
-    print("Total audio files:", len(audio))
-    print("First label:", labels[0])
-    print("Shape:", audio[0].shape)
-    print("Sample rate:", sample_rates[0])
