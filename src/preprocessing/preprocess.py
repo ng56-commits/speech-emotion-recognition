@@ -38,4 +38,30 @@ def trim_or_pad(audio_array, sample_rate, duration=3):
             mode="constant"
         )
 
+
     return audio_array, sample_rate
+
+
+#normalize 
+
+def normalize_volume(audio_array, sample_rate):
+    """
+    Normalizes audio volume so the peak amplitude is 1.0.
+    """
+    max_amplitude = np.max(np.abs(audio))
+    if max_amplitude > 0:
+        audio = audio / max_amplitude
+    return audio_array, sample_rate
+
+
+#trim silence
+
+import librosa
+
+def remove_silence(audio_array, sample_rate, top_db=25):
+    """
+    Removes leading and trailing silence from the audio.
+    top_db: threshold (in decibels) below which audio is considered silence.
+    """
+    trimmed_audio, _ = librosa.effects.trim(audio_array, top_db=top_db)
+    return trimmed_audio, sample_rate
