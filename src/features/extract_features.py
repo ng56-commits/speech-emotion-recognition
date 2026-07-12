@@ -72,15 +72,3 @@ def extract_features_partB(audio, sr):
 
 
 
-if __name__ == "__main__":
-    # Replace with the path to one of your audio files
-    
-    file_path = r"C:\Users\varsh\OneDrive\Desktop\ml_project\speech-emotion-recognition\data\raw\ravdess\Actor_01\03-01-01-01-01-01-01.wav"
-
-    audio, sr = librosa.load(file_path, sr=None)
-
-    features = extract_features_partB(audio, sr)
-
-    print("Features:")
-    print(features)
-    print("Shape:", features.shape)
