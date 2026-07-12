@@ -65,3 +65,15 @@ def remove_silence(audio_array, sample_rate, top_db=25):
     """
     trimmed_audio, _ = librosa.effects.trim(audio_array, top_db=top_db)
     return trimmed_audio, sample_rate
+
+
+def preprocess_pipeline(audio_array, sample_rate):
+    """
+    Runs the full preprocessing pipeline on a single audio clip:
+    normalize -> remove silence -> reduce noise -> trim/pad to fixed length
+    """
+    audio_array, sample_rate = normalize_volume(audio_array, sample_rate)
+    audio_array, sample_rate = remove_silence(audio_array, sample_rate)
+    audio_array, sample_rate = reduce_noise(audio_array, sample_rate)
+    audio_array, sample_rate = trim_or_pad(audio_array, sample_rate)
+    return audio_array, sample_rate
