@@ -48,9 +48,9 @@ def normalize_volume(audio_array, sample_rate):
     """
     Normalizes audio volume so the peak amplitude is 1.0.
     """
-    max_amplitude = np.max(np.abs(audio))
+    max_amplitude = np.max(np.abs(audio_array))
     if max_amplitude > 0:
-        audio = audio / max_amplitude
+        audio_array = audio_array / max_amplitude
     return audio_array, sample_rate
 
 
