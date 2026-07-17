@@ -47,7 +47,6 @@ def load_tess(dataset_path):
     sample_rates = []
 
     for emotion_folder in os.listdir(dataset_path):
-
         folder_path = os.path.join(dataset_path, emotion_folder)
 
         if not os.path.isdir(folder_path):
@@ -60,10 +59,12 @@ def load_tess(dataset_path):
         if emotion == "surprise":
             emotion = "surprised"
 
+        # TESS uses "fear", RAVDESS uses "fearful" — standardize to one
+        if emotion == "fear":
+            emotion = "fearful"
+
         for file in os.listdir(folder_path):
-
             if file.endswith(".wav"):
-
                 path = os.path.join(folder_path, file)
 
                 audio, sr = librosa.load(path, sr=None)
@@ -76,9 +77,7 @@ def load_tess(dataset_path):
 
 
 def load_all_datasets(ravdess_path, tess_path):
-
     rav_audio, rav_labels, rav_sr = load_ravdess(ravdess_path)
-
     tess_audio, tess_labels, tess_sr = load_tess(tess_path)
 
     audio = rav_audio + tess_audio
@@ -86,7 +85,3 @@ def load_all_datasets(ravdess_path, tess_path):
     sample_rates = rav_sr + tess_sr
 
     return audio, labels, sample_rates
-
-
-
-

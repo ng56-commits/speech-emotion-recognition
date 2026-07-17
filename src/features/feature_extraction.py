@@ -71,20 +71,10 @@ def extract_features_partB(audio, sr):
     return features
 
 
-
 def extract_features(audio, sr):
-    """
-    Extracts all features and combines them into one feature vector.
-    """
-
     mfcc = extract_mfcc(audio, sr)
     chroma = extract_chroma(audio, sr)
-    partB = extract_features_partB(audio, sr)
+    czrc = extract_features_partB(audio, sr)
 
-    features = np.hstack([
-        mfcc,
-        chroma,
-        partB
-    ])
-
+    features = np.hstack([mfcc, chroma, czrc])
     return features

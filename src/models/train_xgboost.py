@@ -31,7 +31,7 @@ y_train = label_encoder.fit_transform(y_train)
 y_test = label_encoder.transform(y_test)
 
 # Save the encoder for future predictions
-joblib.dump(label_encoder, "models/label_encoder.joblib")
+joblib.dump(label_encoder, "models/xgboost_label_encoder.joblib")
 
 print("Emotion Mapping:")
 for i, emotion in enumerate(label_encoder.classes_):
@@ -105,4 +105,4 @@ for i in range(10):
 joblib.dump(model, "models/xgboost_model.joblib")
 
 print("\nModel saved as models/xgboost_model.joblib")
-print("Label encoder saved as models/label_encoder.joblib")
+print("Label encoder saved as models/xgboost_label_encoder.joblib")
