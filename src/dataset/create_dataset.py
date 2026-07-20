@@ -5,8 +5,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 from src.data.loader import load_all_datasets
-from src.preprocessing.preprocess import preprocess_pipeline
-from src.features.extract_features import extract_features
+from src.preprocessing.preprocessing import preprocess_pipeline
+from src.features.feature_extraction import extract_features
 
 
 # ----------------------------
