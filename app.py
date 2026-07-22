@@ -16,6 +16,7 @@ Institution : IIITDM Kurnool
 
 import streamlit as st
 import time
+import requests
 from datetime import datetime
 
 # ----------------------------------------------------------------------------
@@ -48,16 +49,41 @@ def load_model_placeholder():
 
 def predict_emotion_placeholder(audio_file):
     """
-    PLACEHOLDER: Call your existing prediction pipeline here.
-    This should return a tuple: (predicted_emotion: str, confidence: float)
-    Example:
-        model = load_model_placeholder()
-        features = extract_features_placeholder(audio_file)
-        prediction, confidence = model.predict(features)
-        return prediction, confidence
+    Sends audio file to FastAPI backend and returns prediction.
     """
-    # Dummy placeholder return so the UI can be demoed without a backend.
-    return "Happy", 0.87
+
+    files = {
+        "file": (
+            audio_file.name,
+            audio_file.getvalue(),
+            "audio/wav"
+        )
+    }
+
+    try:
+        response = requests.post(
+            "http://127.0.0.1:8000/predict/",
+            files=files
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+
+            predicted_emotion = result["predicted_emotion"]
+
+            confidence_dict = result["confidence"]
+
+            confidence = max(confidence_dict.values())
+
+            return predicted_emotion.capitalize(), confidence
+
+        else:
+            st.error(response.text)
+            return None, None
+
+    except Exception as e:
+        st.error(f"API Error: {e}")
+        return None, None
 
 
 # ==================================================================================
@@ -292,6 +318,22 @@ def load_css():
             box-shadow: 0 8px 30px rgba(123, 47, 247, 0.3);
         }
 
+        /* ---------- Tabs (Upload vs Record) ---------- */
+        button[data-baseweb="tab"] {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #9FA8DA;
+        }
+
+        button[data-baseweb="tab"][aria-selected="true"] {
+            color: #00F5FF !important;
+        }
+
+        div[data-baseweb="tab-highlight"] {
+            background-color: #00F5FF !important;
+        }
+
         /* ---------- Sidebar ---------- */
         section[data-testid="stSidebar"] {
             background: linear-gradient(180deg, #0B0F2B 0%, #150A2E 100%);
@@ -380,9 +422,9 @@ def hero_section():
             <div class="hero-title">🎙️ EchoSense AI</div>
             <div class="hero-subtitle">Speech Emotion Recognition using Machine Learning</div>
             <div class="hero-description">
-                Upload any speech recording and let our AI model analyze vocal tone, pitch,
-                and acoustic patterns to predict the speaker's underlying emotion —
-                instantly, accurately, and beautifully visualized.
+                Upload a speech recording — or record one live from your microphone — and
+                let our AI model analyze vocal tone, pitch, and acoustic patterns to predict
+                the speaker's underlying emotion, instantly and beautifully visualized.
             </div>
         </div>
         """,
@@ -410,6 +452,10 @@ def sidebar():
             """,
             unsafe_allow_html=True,
         )
+
+        st.markdown('<div class="sidebar-section">🎤 Input Methods</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-item">📤 Upload a .wav file</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-item">🎙️ Record live from microphone</div>', unsafe_allow_html=True)
 
         st.markdown('<div class="sidebar-section">🎭 Supported Emotions</div>', unsafe_allow_html=True)
         for emotion, emoji in EMOTION_EMOJI_MAP.items():
@@ -440,26 +486,63 @@ def sidebar():
 
 
 # ==================================================================================
-# UPLOAD SECTION
+# INPUT SECTION (Upload OR Record)
 # ==================================================================================
 
 def upload_section():
-    st.markdown('<div class="section-header">📤 Upload Speech Recording</div>', unsafe_allow_html=True)
+    """
+    Lets the user provide audio in one of two ways:
+      1. Upload an existing .wav file
+      2. Record audio live using their microphone (st.audio_input)
 
-    with st.container(border=True):
-        st.markdown(
-            '<p style="text-align:center; color:#9FA8DA; margin-bottom:10px;">'
-            '🎵 Drag and drop a WAV file below, or click to browse</p>',
-            unsafe_allow_html=True,
-        )
-        uploaded_file = st.file_uploader(
-            "Upload speech recording",
-            type=["wav"],
-            help="Only .wav audio files are supported.",
-            label_visibility="collapsed",
-        )
+    Both paths return an audio object compatible with the rest of the pipeline
+    (st.audio, .name, .size are all available on both UploadedFile-like objects).
 
-    return uploaded_file
+    NOTE: st.audio_input requires Streamlit >= 1.36. If you're on an older
+    version, either upgrade Streamlit or remove the "Record Audio" tab below.
+    """
+    st.markdown('<div class="section-header">📤 Provide Speech Recording</div>', unsafe_allow_html=True)
+
+    tab_upload, tab_record = st.tabs(["📤 Upload File", "🎤 Record Audio"])
+
+    audio_source = None
+
+    with tab_upload:
+        with st.container(border=True):
+            st.markdown(
+                '<p style="text-align:center; color:#9FA8DA; margin-bottom:10px;">'
+                '🎵 Drag and drop a WAV file below, or click to browse</p>',
+                unsafe_allow_html=True,
+            )
+            uploaded_file = st.file_uploader(
+                "Upload speech recording",
+                type=["wav"],
+                help="Only .wav audio files are supported.",
+                label_visibility="collapsed",
+            )
+            if uploaded_file is not None:
+                audio_source = uploaded_file
+
+    with tab_record:
+        with st.container(border=True):
+            st.markdown(
+                '<p style="text-align:center; color:#9FA8DA; margin-bottom:10px;">'
+                '🎙️ Click the mic below, record your speech, then click it again to stop</p>',
+                unsafe_allow_html=True,
+            )
+            recorded_audio = st.audio_input(
+                "Record speech recording",
+                help="Records audio directly from your microphone (browser permission required).",
+                label_visibility="collapsed",
+            )
+            if recorded_audio is not None:
+                # st.audio_input returns a BytesIO-like UploadedFile without a
+                # user-chosen filename, so we give it a friendly, timestamped one.
+                if not getattr(recorded_audio, "name", None):
+                    recorded_audio.name = f"recording_{datetime.now().strftime('%Y%m%d_%H%M%S')}.wav"
+                audio_source = recorded_audio
+
+    return audio_source
 
 
 # ==================================================================================
@@ -473,7 +556,8 @@ def audio_preview_section(uploaded_file):
 
     with col1:
         with st.container(border=True):
-            st.markdown(f'<div class="card-title">📁 {uploaded_file.name}</div>', unsafe_allow_html=True)
+            file_name = getattr(uploaded_file, "name", "Recorded Audio")
+            st.markdown(f'<div class="card-title">📁 {file_name}</div>', unsafe_allow_html=True)
             st.audio(uploaded_file, format="audio/wav")
 
     with col2:
@@ -486,14 +570,14 @@ def audio_preview_section(uploaded_file):
             #   duration = librosa.get_duration(y=y, sr=sr)
             # ------------------------------------------------------------------
             duration_placeholder = "-- (compute via backend)"
-            file_size_kb = round(uploaded_file.size / 1024, 2)
+            file_size_kb = round(uploaded_file.size / 1024, 2) if getattr(uploaded_file, "size", None) else "--"
 
             st.markdown(
                 f"""
                 <div class="card-title">ℹ️ File Info</div>
                 <div class="card-text">🕒 Duration: {duration_placeholder}</div>
                 <div class="card-text">💾 File Size: {file_size_kb} KB</div>
-                <div class="card-text">📅 Uploaded: {datetime.now().strftime("%d %b %Y, %H:%M")}</div>
+                <div class="card-text">📅 Captured: {datetime.now().strftime("%d %b %Y, %H:%M")}</div>
                 """,
                 unsafe_allow_html=True,
             )
@@ -612,7 +696,7 @@ def information_cards_section():
             <div class="glass-card">
                 <div class="card-title">⚙️ How It Works</div>
                 <div class="card-text">
-                1. Upload a WAV speech recording.<br>
+                1. Upload a WAV file, or record speech live from your microphone.<br>
                 2. Acoustic features (MFCC, chroma, mel-spectrogram, etc.) are extracted.<br>
                 3. A trained ML model (XGBoost / Scikit-Learn) classifies the emotion.<br>
                 4. Results are displayed with confidence scores and visualizations.
@@ -625,8 +709,8 @@ def information_cards_section():
         st.markdown(
             """
             <div class="glass-card">
-                <div class="card-title">📁 Supported File Format</div>
-                <div class="card-text">Only <strong>.wav</strong> audio files are supported for the most accurate feature extraction and prediction results.</div>
+                <div class="card-title">📁 Supported Input</div>
+                <div class="card-text">Upload a <strong>.wav</strong> file, or use the <strong>Record Audio</strong> tab to capture speech directly from your microphone for the most accurate feature extraction and prediction results.</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -689,15 +773,15 @@ def main():
     sidebar()
     hero_section()
 
-    uploaded_file = upload_section()
+    audio_source = upload_section()
 
-    if uploaded_file is not None:
-        audio_preview_section(uploaded_file)
-        result = prediction_section(uploaded_file)
+    if audio_source is not None:
+        audio_preview_section(audio_source)
+        result = prediction_section(audio_source)
         result_section(result)
         visualizations_section()
     else:
-        st.info("👆 Upload a WAV file above to begin emotion analysis.")
+        st.info("👆 Upload a WAV file or record audio above to begin emotion analysis.")
 
     information_cards_section()
     footer()
